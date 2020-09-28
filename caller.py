@@ -77,15 +77,26 @@ class End2End:
         return '/%s' % '/'.join(components)
 
     #https://stackoverflow.com/questions/21842885/python-find-a-substring-in-a-string-and-returning-the-index-of-the-substring
-    def find_str(self, s, char):
+    def find_str(self, s, char, xpath):
         index = 0
+        skip = 0
 
-        if char in s:
+        if char and char in s:
+            
+            # Add the skip counter if there are other text equal
+            if self.annotations_json and self.annotations_json.get(xpath) is not None:
+                for text in self.annotations_json.get(xpath):
+                    if text == char:
+                        skip += 1
+
             c = char[0]
             for ch in s:
                 if ch == c:
                     if s[index:index+len(char)] == char:
-                        return index
+                        if skip == 0:
+                            return index
+                        else:
+                            skip -= 1
 
                 index += 1
 
@@ -102,7 +113,7 @@ class End2End:
             wikidata_id = self.get_wikidata_id(annotation[2])
 
             self.body = f'{self.body[:start]}<annotation text="{text}" end_offset="{l}" wikidata_id="{wikidata_id}">{text}</annotation>{self.body[end:]}'
-
+            
     def write_rdf_annotation(self):
 
         filename = self.name.replace('.html','')
@@ -110,7 +121,7 @@ class End2End:
         self.update_body()
 
         self.soup = BeautifulSoup(self.body, 'html.parser')
-        self.annotations_json = []
+        self.annotations_json = {}
 
         for annotation in self.soup.findAll('annotation'):
 
@@ -118,7 +129,7 @@ class End2End:
             wikidata_base_uri = 'https://www.wikidata.org/wiki/'
 
             xpath = self.xpath_soup(annotation.parent)
-            offset =  self.find_str(annotation.parent.text, annotation['text'])
+            offset =  self.find_str(annotation.parent.text, annotation['text'], xpath)
 
             g = Graph()
 
@@ -222,6 +233,11 @@ class End2End:
 
             g.serialize(destination=f'{os.path.join(dir_path, dir_data, dir_rdf, id)}.ttl', format='turtle')
 
+            if xpath not in self.annotations_json:
+                self.annotations_json[xpath] = []
+
+            self.annotations_json[xpath].append(annotation['text'])
+
 class Adapter: 
     """ 
     Adapts an object by replacing methods. 
@@ -310,8 +326,8 @@ if __name__ == "__main__":
                     key_spans: []
                 }
                     
-                End2End = End2End(data=data, name=filename) 
-                objects.append(Adapter(End2End, annotations = End2End.get_annotations)) 
+                end2end = End2End(data=data, name=filename) 
+                objects.append(Adapter(end2end, annotations = end2end.get_annotations)) 
 
     for obj in objects: 
         obj.write_rdf_annotation()
