@@ -3,6 +3,8 @@ import os
 import json
 import ast
 import uuid
+import urllib
+
 from bs4 import BeautifulSoup
 from rdflib import Graph, URIRef, namespace, Namespace, Literal
 from datetime import datetime
@@ -244,6 +246,32 @@ class Adapter:
 """ main method """
 if __name__ == "__main__": 
 
+    def delete():
+        for root, dirs, src_files in os.walk(dir_output):
+            for filename in src_files:
+
+                graph_uri = urllib.parse.quote(f"https://collection.itatti.harvard.edu/yashiro/annotation/{filename.replace('.ttl','')}/container/context", safe='') 
+                request_url = f'https://collection.itatti.harvard.edu/rdf-graph-store?graph={graph_uri}'
+
+                command = f'curl -u admin:admin -X DELETE -H \'Content-Type: text/turtle\' {request_url}'
+
+                print(f'DEL\t{filename}')
+                print(os.system(command))
+                os.remove(os.path.join(dir_output, filename))
+
+
+    def post():
+        for root, dirs, src_files in os.walk(dir_output):
+            for filename in src_files:
+
+                graph_uri = urllib.parse.quote(f"https://collection.itatti.harvard.edu/yashiro/annotation/{filename.replace('.ttl','')}/container/context", safe='') 
+                request_url = f'https://collection.itatti.harvard.edu/rdf-graph-store?graph={graph_uri}'
+
+                command = f'curl -u admin:admin -X POST -H \'Content-Type: text/turtle\' --data-binary \'@{os.path.join(dir_output,filename)}\' {request_url}'
+
+                print(f'post\t{filename}')
+                print(os.system(command))
+
     timestring = '%Y-%m-%dT%H:%M:%S'
 
     key_text = 'text'
@@ -265,8 +293,11 @@ if __name__ == "__main__":
     dir_rdf = 'rdf'
 
     dir_input = os.path.join(dir_path, dir_data, dir_txt)
+    dir_output = os.path.join(dir_path, dir_data, dir_rdf)
 
     objects = [] 
+
+    delete()
 
     for root, dirs, src_files in os.walk(dir_input):
         for filename in src_files:
@@ -284,3 +315,5 @@ if __name__ == "__main__":
 
     for obj in objects: 
         obj.write_rdf_annotation()
+
+    post()
