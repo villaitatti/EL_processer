@@ -112,7 +112,7 @@ class End2End:
 
             wikidata_id = self.get_wikidata_id(annotation[2])
 
-            self.body = f'{self.body[:start]}<annotation text="{text}" end_offset="{l}" wikidata_id="{wikidata_id}">{text}</annotation>{self.body[end:]}'
+            self.body = f'{self.body[:start]}<annotation text="{text}" wikipedia_id="{annotation[2]}" end_offset="{l}" wikidata_id="{wikidata_id}">{text}</annotation>{self.body[end:]}'
             
     def write_rdf_annotation(self):
 
@@ -151,6 +151,7 @@ class End2End:
             id = str(uuid.uuid1())
             base_node_uri = f'{base_uri}{id}'
             base_node_body_uri = f'{base_node_uri}/body'
+            base_node_body_id_uri = f'{base_node_uri}/body/{uuid.uuid1()}'
             base_node_event_uri = f'{base_uri_file}/annotation-event-{uuid.uuid1()}'
             base_node_event_date_uri = f'{base_node_event_uri}/modifiedAt'
 
@@ -181,6 +182,7 @@ class End2End:
 
             LETTER = URIRef(base_uri_file)
             WIKIDATA_OBJECT = URIRef(wikidata_object_uri)
+            WIKIDATA_OBJECT_ID = URIRef(base_node_body_id_uri)
 
             g.add( (PLATFORM.formContainer, LDP.contains, BASE_NODE_CONTAINER) )
 
@@ -197,7 +199,8 @@ class End2End:
             g.add( (BASE_NODE, OA.hasTarget, RANGE_SOURCE) )
 
             g.add( (BASE_NODE_BODY, CRM.P1_is_identified_by, WIKIDATA_OBJECT) )
-            g.add( (BASE_NODE_BODY, RDF.type, CRM.E1_Entity) )
+            g.add( (BASE_NODE_BODY, RDF.type, URIRef('https://collection.itatti.harvard.edu/yashiro/annotation-schema/Entity')) )
+            g.add( (WIKIDATA_OBJECT, RDFS.label, Literal(annotation['wikipedia_id'], datatype=XSD.string)) )
 
             g.add( (BASE_NODE_EVENT, RDF.type, CRMDIG.D30_Annotation_Event) )
             g.add( (BASE_NODE_EVENT, CRM.P14_carried_out_by, USER.EL_processer) )
@@ -262,30 +265,37 @@ class Adapter:
 """ main method """
 if __name__ == "__main__": 
 
+    key_usr = 'usr'
+    key_psw = 'psw'
+
+    def get_auth():
+        return json.load(open(os.path.join(dir_path, '.config'),'r'))
+
     def delete():
+        auth = get_auth()
         for root, dirs, src_files in os.walk(dir_output):
             for filename in src_files:
 
                 graph_uri = urllib.parse.quote(f"https://collection.itatti.harvard.edu/yashiro/annotation/{filename.replace('.ttl','')}/container/context", safe='') 
                 request_url = f'https://collection.itatti.harvard.edu/rdf-graph-store?graph={graph_uri}'
 
-                command = f'curl -u admin:admin -X DELETE -H \'Content-Type: text/turtle\' {request_url}'
+                command = f'curl -u {auth.get(key_usr)}:{auth.get(key_psw)} -X DELETE -H \'Content-Type: text/turtle\' {request_url}'
 
                 print(f'DEL\t{filename}')
                 print(os.system(command))
                 os.remove(os.path.join(dir_output, filename))
 
-
     def post():
+        auth = get_auth()
         for root, dirs, src_files in os.walk(dir_output):
             for filename in src_files:
 
                 graph_uri = urllib.parse.quote(f"https://collection.itatti.harvard.edu/yashiro/annotation/{filename.replace('.ttl','')}/container/context", safe='') 
                 request_url = f'https://collection.itatti.harvard.edu/rdf-graph-store?graph={graph_uri}'
 
-                command = f'curl -u admin:admin -X POST -H \'Content-Type: text/turtle\' --data-binary \'@{os.path.join(dir_output,filename)}\' {request_url}'
+                command = f'curl -u {auth.get(key_usr)}:{auth.get(key_psw)} -X POST -H \'Content-Type: text/turtle\' --data-binary \'@{os.path.join(dir_output,filename)}\' {request_url}'
 
-                print(f'post\t{filename}')
+                print(f'POST\t{filename}')
                 print(os.system(command))
 
     timestring = '%Y-%m-%dT%H:%M:%S'
