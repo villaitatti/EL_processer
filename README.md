@@ -1,11 +1,7 @@
-# EL_processer
+# REL_processer
 
-Entity Linking (EL) processer is a python script that calls the Neural Network created with the code in https://github.com/dalab/end2end_neural_el.
+ResearchSpace Entity Linking (REL) processer is a python script that calls the Neural Network created with the code from here: https://github.com/dalab/end2end_neural_el.
 
-The core EL code has been downloaded and executed. After the training, it opens a server providing data as described in the repository.
+After the training, it opens a server providing data as described in the repository.
 
-This project takes the html file of the letters in the [Yashiro website](https://collection.itatti.harvard.edu/resource/yashiro:Letters?semanticSearch=N4IgZiBcDaC6A0IBOBTAzgVwDYBcrAF9EATAQx1LRRzSjkVKwEsBzAOwFsU29JQAVKCAAi5UgDoAsqQCeAIxQhEANXwEiIFklIAHABYBlAMYB7HSgMpSSI3vwhBkEWKmyFSkKr7qCQA) and for each of them, the code makes a POST request for having back 
-the list of entities, disambiguated against Wikipedia.
-
-Each annotation is then manipulated and converted into RDF, which is compliant to the Researchspace (RS) instance where the yashiro letters are stored. The RS 
-environment is rensponsible of handling the rendering for the annotations.
+This project takes the html files of projects using the Semantic Digital Publishing functionality of ResearchSpace, makes a POST request for each one against the Wikipedia/Wikidata endpoint to retrieve related entities. I encodes the results in RDF usng the same data model as the Semantic Digital Publishing project, including the exact position of the text that is being annotated. The ResearchSpace platform is then rensponsible for the handling and rendering of the annotations, which can be further refined and edited by users.
