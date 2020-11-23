@@ -1,6 +1,6 @@
-# REL_processer
+# ResearchSpace Entitiy Linking Processor
 
-ResearchSpace Entity Linking (REL) processer is a python script that calls the Neural Network created with the code from here: https://github.com/dalab/end2end_neural_el.
+The ResearchSpace Entity Linking (REL) processer is a python script that calls the Neural Network created with the code from here: https://github.com/dalab/end2end_neural_el.
 
 After the training, it opens a server providing data as described in the repository.
 
